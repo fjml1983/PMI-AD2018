@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.DatePicker;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.Spinner;
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     public Switch swNotificaciones;
     public ToggleButton tbPublicidad;
     public Spinner spOrigen;
+
     public ImageButton btnHoraNacimiento,btnFechaNacimiento;
     public Button btnGuardar;
     public static int year, month, date, hrs, min;
@@ -43,9 +45,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        txtUserName = (TextView) findViewById(R.id.tv_username);
-        txtPassword = (TextView) findViewById(R.id.tv_password);
-        txtNombrePila = (TextView) findViewById(R.id.tv_nombrePila);
+        txtUserName = (EditText) findViewById(R.id.et_username);
+        txtPassword = (EditText) findViewById(R.id.et_password);
+        txtNombrePila = (EditText) findViewById(R.id.et_nombrePila);
         chkDotNet = (CheckBox) findViewById(R.id.cb_dotnet);
         chkJava = (CheckBox) findViewById(R.id.cb_java);
         chkPhyton = (CheckBox) findViewById(R.id.cb_phyton);
@@ -59,10 +61,12 @@ public class MainActivity extends AppCompatActivity {
                 (ImageButton)findViewById(R.id.ib_horaFechaNacimiento);
         btnFechaNacimiento =
                 (ImageButton)findViewById(R.id.ib_calenFechaNacimiento);
+
         txtHoraNacimiento =
                 (TextView) findViewById(R.id.tv_horaNacimiento);
         txtFechaNacimiento =
                 (TextView) findViewById(R.id.tv_fechaNacimiento);
+
         btnGuardar =
                 (Button) findViewById(R.id.btn_guardar);
 
@@ -83,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
                 objUsr.setTecnologias(tecnologias );
 
                 objUsr.setGenero((rdbFemenino.isChecked())?"FEMENINO":"MASCULINO");
-                objUsr.setNotificaciones(swNotificaciones.isActivated());
+                objUsr.setNotificaciones(swNotificaciones.isChecked());
                 objUsr.setPublicidad(tbPublicidad.isChecked());
                 objUsr.setIes_origen(spOrigen.getSelectedItem().toString() );
                 objUsr.setFechaHoraNacimiento(new Date(year, month, date, hrs, min));
@@ -154,11 +158,12 @@ public class MainActivity extends AppCompatActivity {
         public void onDateSet(DatePicker view, int y, int m, int d) {
             // Do something with the date chosen by the user
             year = y;
-            month = m;
+            month = m+1;
             date = d;
-            txtFechaNacimiento.setText("Día:" + d +
-                                       " Mes:" + m +
-                                       " Año:" + y);
+            txtFechaNacimiento.setText("Día:" + date +
+                                       " Mes:" + month +
+                                       " Año:" + year);
+
         }
     }
 
