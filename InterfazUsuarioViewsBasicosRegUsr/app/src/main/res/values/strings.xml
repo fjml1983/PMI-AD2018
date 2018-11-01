@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">InterfazUsuarioViewsBasicosRegUsr</string>
+    <string-array name="instituciones_array">
+        <item>ITSUR</item>
+        <item>ITESS</item>
+        <item>ITESI</item>
+        <item>UTNG</item>
+        <item>ITESO</item>
+        <item>ITL</item>
+        <item>UTSOE</item>
+        <item>ITM</item>
+    </string-array>
+</resources>
