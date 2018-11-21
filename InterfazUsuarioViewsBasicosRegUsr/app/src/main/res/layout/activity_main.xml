@@ -76,7 +76,7 @@
             android:id="@+id/et_nombrePila"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textPassword"
+            android:inputType="textPersonName"
             />
     </LinearLayout>
 

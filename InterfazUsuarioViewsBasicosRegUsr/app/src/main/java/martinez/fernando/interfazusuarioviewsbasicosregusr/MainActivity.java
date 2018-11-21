@@ -1,14 +1,21 @@
 package martinez.fernando.interfazusuarioviewsbasicosregusr;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.TimePickerDialog;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.DatePicker;
@@ -22,9 +29,17 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Formatter;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,6 +54,29 @@ public class MainActivity extends AppCompatActivity {
     public ImageButton btnHoraNacimiento,btnFechaNacimiento;
     public Button btnGuardar;
     public static int year, month, date, hrs, min;
+
+    public void showDialog(List<Usuario> usuarios) {
+        ArrayList<String> displayValues=new ArrayList<>();
+        for (Usuario entity : usuarios) {
+            displayValues.add(entity.getUsername());
+        }
+        ArrayAdapter<String> adapter =
+                new ArrayAdapter<String>(
+                        getApplicationContext(),
+                        android.R.layout.simple_list_item_1,
+                        displayValues);
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Usuarios recuperados");
+        builder.setAdapter(adapter, null);
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener(){
+            @Override
+            public void onClick(DialogInterface dialog,int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.show();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
         btnGuardar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 //TODO: Bajar todos los valores de los GUI Widgets a un pojo
                 Usuario objUsr = new Usuario();
                 objUsr.setUsername(txtUserName.getText().toString());
@@ -91,6 +130,113 @@ public class MainActivity extends AppCompatActivity {
                 objUsr.setPublicidad(tbPublicidad.isChecked());
                 objUsr.setIes_origen(spOrigen.getSelectedItem().toString() );
                 objUsr.setFechaHoraNacimiento(new Date(year, month, date, hrs, min));
+
+                BaseDatosDbHelper dbHelper = new BaseDatosDbHelper(getApplicationContext());
+
+                try {
+                    SQLiteDatabase bd = dbHelper.getWritableDatabase();
+                    ContentValues valores = new ContentValues();
+                    valores.put(BaseDatosContract.TablaUsuario.COLUMN_NAME_USERNAME,
+                                objUsr.getUsername());
+                    valores.put(BaseDatosContract.TablaUsuario.COLUMN_NAME_PASSWORD,
+                                objUsr.getPassword());
+                    valores.put(BaseDatosContract.TablaUsuario.COLUMN_NAME_NOMBRE_PILA,
+                            objUsr.getNombrePila());
+                    valores.put(BaseDatosContract.TablaUsuario.COLUMN_NAME_FECHA_NACIMIENTO,
+                            objUsr.getFechaHoraNacimiento().getTime()); //Unix Epoch
+                    valores.put(BaseDatosContract.TablaUsuario.COLUMN_NAME_GENERO,
+                            objUsr.getGenero());
+                    valores.put(BaseDatosContract.TablaUsuario.COLUMN_NAME_INSTITUCION,
+                            objUsr.getIes_origen());
+                    valores.put(BaseDatosContract.TablaUsuario.COLUMN_NAME_TECNOLOGIAS,
+                            objUsr.getTecnologias());
+                    valores.put(BaseDatosContract.TablaUsuario.COLUMN_NAME_PUBLICIDAD,
+                            objUsr.isPublicidad());
+                    valores.put(BaseDatosContract.TablaUsuario.COLUMN_NAME_NOTIFICACIONES,
+                            objUsr.isNotificaciones());
+                    //...
+                    bd.insert(BaseDatosContract.TablaUsuario.TABLE_NAME, null, valores);
+                    bd.close();
+                    Toast.makeText(MainActivity.this,
+                            "El usuario se ha almacenado en BD correctamente.",
+                            Toast.LENGTH_SHORT).show();
+
+                }catch (Exception ex){
+                    Toast.makeText(MainActivity.this, "Hubo un problema al guardar en BD.", Toast.LENGTH_SHORT).show();
+                }
+
+                try{
+                    SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+                    String[] projection = {
+                            BaseDatosContract.TablaUsuario._ID,
+                            BaseDatosContract.TablaUsuario.COLUMN_NAME_USERNAME,
+                            BaseDatosContract.TablaUsuario.COLUMN_NAME_PASSWORD,
+                            BaseDatosContract.TablaUsuario.COLUMN_NAME_NOMBRE_PILA
+                    };
+
+                    Cursor resultado = db.query(
+                             BaseDatosContract.TablaUsuario.TABLE_NAME,
+                             projection,
+                             null,null,null,null,null);
+
+                    List usuarios = new ArrayList<Usuario>();
+                    Usuario objRecuperado;
+                    while(resultado.moveToNext()) {
+                        objRecuperado = new Usuario();
+                        //Recuperar Username y asignarlo al pojo
+                        String username = resultado.getString(
+                                resultado.getColumnIndexOrThrow(
+                                        BaseDatosContract.TablaUsuario.COLUMN_NAME_USERNAME));
+                        objRecuperado.setUsername(username);
+
+                        //Recuperar Password y asignarlo al pojo
+                        String password = resultado.getString(
+                                resultado.getColumnIndexOrThrow(
+                                        BaseDatosContract.TablaUsuario.COLUMN_NAME_PASSWORD));
+                        objRecuperado.setPassword(password);
+
+                        usuarios.add(objRecuperado);
+                    }
+                    resultado.close();
+
+                    //Mostrar el listado de datos recuperados
+                    showDialog(usuarios);
+
+                    //Toast.makeText(MainActivity.this, "Recuperados: " + usuarios.toString() , Toast.LENGTH_SHORT).show();
+
+                }catch (Exception ex){
+                    Toast.makeText(MainActivity.this, "Hubo problemas al leer la base de datos", Toast.LENGTH_SHORT).show();
+                }
+
+
+                /*
+                String FILENAME = "archivo.txt";
+                String datosAEscribir = objUsr.toString();
+                try{
+                    FileOutputStream fos = openFileOutput(FILENAME , Context.MODE_PRIVATE);
+                    PrintWriter writer = new PrintWriter(fos);
+                    writer.println(datosAEscribir);
+                    writer.close();
+                    fos.close();
+                    Toast.makeText(MainActivity.this, "Datos Escritos correctamente", Toast.LENGTH_SHORT).show();
+                }catch (Exception ex){
+                    Toast.makeText(MainActivity.this, "Error al escribir los datos en archivo.", Toast.LENGTH_SHORT).show();
+                }
+
+                try{
+                    FileInputStream fis = openFileInput(FILENAME);
+                    InputStreamReader isr = new InputStreamReader(fis);
+                    BufferedReader reader = new BufferedReader(isr);
+                    String datosLeidos = reader.readLine();
+                    reader.close();
+                    fis.close();
+                    Toast.makeText(MainActivity.this, "Datos recuperados: " + datosLeidos, Toast.LENGTH_LONG).show();
+
+                }catch (Exception ex){
+                    Toast.makeText(MainActivity.this, "Error al leer los datos desde archivo.", Toast.LENGTH_SHORT).show();
+                }
+*/
 
                 Toast.makeText(MainActivity.this, "Se guardó el usuario: "
                         + objUsr.toString(), Toast.LENGTH_LONG).show();
